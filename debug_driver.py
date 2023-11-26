@@ -9,7 +9,8 @@ def handle_client(client_socket, session_url):
         command = client_socket.recv(1024).decode()
         if command == 'quit':
             break
-        client_socket.close()
+    
+    client_socket.close()
 
 driver = start_driver('debug', None, None)
 
