@@ -14,10 +14,77 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from openpyxl import load_workbook
 from collections import OrderedDict
+import json
+import subprocess
 
 cur_dir = os.path.dirname(os.path.abspath(__file__)) 
 
-def fetch(id, auto, loop_string):
+def start_driver(mode, id, sheet):
+
+    global cur_dir
+    
+    if mode == 'auto':
+        proxy = sheet['B'+str(int(id)+1)].value
+    elif mode == 'debug':
+        f = open(cur_dir+'/debug.cfg')
+        data = json.load(f)
+        proxy = data['proxy']
+        id = 'debug_profile'
+        print(proxy)
+        f.close()
+
+    proxy_lp = proxy.split('//')[1].split('@')[0].split(':')
+    proxy_ip = proxy.split('//')[1].split('@')[1].split(':')
+    proxy_type = proxy.split('//')[0].split(':')[0]
+
+    seleniumwire_options = {
+        'proxy': {
+            f'{proxy_type}': f'{proxy_type}://{proxy_lp[0]}:{proxy_lp[1]}@{proxy_ip[0]}:{proxy_ip[1]}',
+            'verify_ssl': False,
+        },
+    }
+
+    options = webdriver.ChromeOptions()
+
+    #options.add_argument("start-maximized")
+    #options.add_argument("--headless")
+
+
+    options.add_extension(cur_dir+'/Ex/MetaMask.crx')
+    options.add_argument(r"--user-data-dir="+cur_dir+"/Profiles/"+id)
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+
+    driver = webdriver.Chrome(options=options ,seleniumwire_options=seleniumwire_options)
+
+    ua = UserAgent()
+    fua = ua.chrome
+
+    if not os.path.exists(cur_dir+'/Profiles/'+id):
+        os.makedirs(cur_dir+'/Profiles/'+id)
+        
+    if not os.path.exists(cur_dir+'/Profiles/'+id+'/ua.txt'):
+        with open(cur_dir+'/Profiles/'+id+'/ua.txt', 'w') as file:
+            file.write(fua)
+            p_ua = fua
+    else:
+        with open(cur_dir+'/Profiles/'+id+'/ua.txt', 'r') as file:
+            p_ua = file.read()
+
+    stealth(driver,
+            user_agent= p_ua,
+            languages=["en-US", "en"],
+            vendor="Google Inc.",
+            platform="Win32",
+            webgl_vendor="Intel Inc.",
+            renderer="Intel Iris OpenGL Engine",
+            fix_hairline=True,
+            )
+    return driver
+
+
+
+def fetch(id, mode, loop_string):
     global cur_dir
     wb = load_workbook(cur_dir+'/profiles.xlsx')
     first_sheet = wb.sheetnames[0]
@@ -39,63 +106,12 @@ def fetch(id, auto, loop_string):
 
         return(str)
     
-
-    pr(f"запущен профиль")
     
-    if auto == True:
-
-        proxy = sheet['B'+str(int(id)+1)].value
-
-        proxy_lp = proxy.split('//')[1].split('@')[0].split(':')
-        proxy_ip = proxy.split('//')[1].split('@')[1].split(':')
-        proxy_type = proxy.split('//')[0].split(':')[0]
-
-        seleniumwire_options = {
-            'proxy': {
-                f'{proxy_type}': f'{proxy_type}://{proxy_lp[0]}:{proxy_lp[1]}@{proxy_ip[0]}:{proxy_ip[1]}',
-                'verify_ssl': False,
-            },
-        }
-
-        options = webdriver.ChromeOptions()
-
-        #options.add_argument("start-maximized")
-        #options.add_argument("--headless")
-
-
-        options.add_extension(cur_dir+'/Ex/MetaMask.crx')
-        options.add_argument(r"--user-data-dir="+cur_dir+"/Profiles/"+id)
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-
-        driver = webdriver.Chrome(options=options ,seleniumwire_options=seleniumwire_options)
-
-        ua = UserAgent()
-        fua = ua.chrome
-
-        if not os.path.exists(cur_dir+'/Profiles/'+id):
-            os.makedirs(cur_dir+'/Profiles/'+id)
             
-        if not os.path.exists(cur_dir+'/Profiles/'+id+'/ua.txt'):
-            with open(cur_dir+'/Profiles/'+id+'/ua.txt', 'w') as file:
-                file.write(fua)
-                p_ua = fua
-        else:
-            with open(cur_dir+'/Profiles/'+id+'/ua.txt', 'r') as file:
-                p_ua = file.read()
+    
+    if mode == 'auto':
 
-        stealth(driver,
-                user_agent= p_ua,
-                languages=["en-US", "en"],
-                vendor="Google Inc.",
-                platform="Win32",
-                webgl_vendor="Intel Inc.",
-                renderer="Intel Iris OpenGL Engine",
-                fix_hairline=True,
-                )
-
-        
-        
+        driver = start_driver('auto', id, sheet)
 
         ##########################################################
 
@@ -182,6 +198,7 @@ def profiles_range(inp, all):
     
 
 def main():
+    global cur_dir
     wb = load_workbook(cur_dir+'/profiles.xlsx')
     first_sheet = wb.sheetnames[0]
     sheet = wb[first_sheet]  
@@ -195,6 +212,8 @@ def main():
         print('ok1')
     elif mode == 2:
         
+        mode = 'auto'
+
         pr_r = input('Какие профиля открыть? (1,2,3,5-10...):')
         pr_r = profiles_range(pr_r, len(sheet['A'])-1)
         if pr_r:
@@ -212,7 +231,7 @@ def main():
                     
                     task_args_list = []
                     for pr in pr_r:
-                        task_args_list.append((str(pr), True, action))
+                        task_args_list.append((str(pr), mode, action))
 
                     semaphore = threading.Semaphore(num_threads)
 
@@ -233,6 +252,13 @@ def main():
             
         else:
             print('Неверное значение или введены несуществующие профиля')
+
+    elif mode == 3:
+
+        mode = 'debug'
+
+        #subprocess.call(['python', cur_dir+"/debug_driver.py"])
+
         
     else:
         print('Неверное значение')
