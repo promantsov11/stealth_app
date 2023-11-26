@@ -1,0 +1,26 @@
+[2372:259:1126/115528.364401:WARNING:chrome_main_delegate.cc(609)] This is Chrome version 117.0.5938.149 (not a warning)
+[2372:259:1126/115528.717476:ERROR:chrome_browser_main.cc(1060)] The use of Rosetta to run the x64 version of Chromium on Arm is neither tested nor maintained, and unexpected behavior will likely result. Please check that all tools that spawn Chromium are Arm-native.
+[2372:259:1126/115531.773913:INFO:policy_logger.cc(142)] :components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc(168) Starting CBCM Controller Initialization
+[2372:259:1126/115531.773948:INFO:policy_logger.cc(142)] :components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc(196) No machine level policy manager exists.
+[2372:259:1126/115534.088561:INFO:CONSOLE(1)] "Setting up Sentry Remote Error Reporting for 'production': SENTRY_DSN", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115534.796725:INFO:CONSOLE(1)] "Removing intrinsics.%FunctionPrototype%.apply.prototype", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115535.059483:INFO:CONSOLE(1)] "Tolerating undeletable intrinsics.%FunctionPrototype%.apply.prototype === undefined", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115535.077853:INFO:CONSOLE(1)] "Removing intrinsics.%FunctionPrototype%.bind.prototype", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115535.088247:INFO:CONSOLE(1)] "Tolerating undeletable intrinsics.%FunctionPrototype%.bind.prototype === undefined", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115536.203178:INFO:CONSOLE(23)] "Snow detected a new realm creation attempt in MetaMask. Performing scuttling on new realm. [object Window]", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/use-snow.js (23)
+[2372:259:1126/115536.440702:INFO:CONSOLE(23)] "Snow detected a new realm creation attempt in MetaMask. Performing scuttling on new realm. [object Window]", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/use-snow.js (23)
+[2372:259:1126/115536.860377:INFO:CONSOLE(1)] "Property eval will not be hardened because it is scuttled by LavaMoat protection. Visit https://github.com/LavaMoat/LavaMoat/pull/360 to learn more.", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115548.024453:INFO:CONSOLE(1)] "WARNING: Missing strong random number source", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115555.341700:INFO:CONSOLE(1)] "(MaxListenersExceededWarning#1)", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115555.357218:INFO:CONSOLE(1)] "MaxListenersExceededWarning#1: Possible EventEmitter memory leak detected. 14 update listeners added. Use emitter.setMaxListeners() to increase limit", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2372:259:1126/115555.470968:INFO:CONSOLE(1)] "  at d (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:18:109174)
+  at a.addListener (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:18:111794)
+  at i.subscribe (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-1.js:1:319137)
+  at o.updateStructure (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-4.js:12:41042)
+  at new o (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-4.js:12:40841)
+  at new Je (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-5.js:1:43131)
+  at le (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-5.js:1:97619)
+  at se (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-5.js:1:95810)
+", source: chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/sentry-install.js (1)
+[2397:13571:1126/115556.259616:WARNING:sqlite_persistent_store_backend_base.cc(198)] Failed to post task from FlushAndNotifyInBackground@net/extras/sqlite/sqlite_persistent_store_backend_base.cc:246 to client_task_runner_.
+[2372:259:1126/115556.287392:WARNING:pref_notifier_impl.cc(41)] Pref observer for media_router.cast_allow_all_ips found at shutdown.
