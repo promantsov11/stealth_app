@@ -7,7 +7,6 @@ from fake_useragent import UserAgent
 import os
 from functions import *
 import base64
-import asyncio
 import threading
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -15,14 +14,18 @@ from selenium.webdriver.common.action_chains import ActionChains
 from openpyxl import load_workbook
 from collections import OrderedDict
 import json
-import subprocess
+import socket
 
 cur_dir = os.path.dirname(os.path.abspath(__file__)) 
 
-def start_driver(mode, id, sheet):
+def pr(id, text):
+    print(f'{id}: {text}')
 
+def start_driver(mode, id, sheet):
     global cur_dir
     
+    pr(id,'профиль открывается')
+
     if mode == 'auto':
         proxy = sheet['B'+str(int(id)+1)].value
     elif mode == 'debug':
@@ -30,7 +33,6 @@ def start_driver(mode, id, sheet):
         data = json.load(f)
         proxy = data['proxy']
         id = 'debug_profile'
-        print(proxy)
         f.close()
 
     proxy_lp = proxy.split('//')[1].split('@')[0].split(':')
@@ -57,6 +59,8 @@ def start_driver(mode, id, sheet):
 
     driver = webdriver.Chrome(options=options ,seleniumwire_options=seleniumwire_options)
 
+
+
     ua = UserAgent()
     fua = ua.chrome
 
@@ -80,94 +84,128 @@ def start_driver(mode, id, sheet):
             renderer="Intel Iris OpenGL Engine",
             fix_hairline=True,
             )
+    
+    if mode == 'debug':
+        driver_port = driver.service.service_url.split(":")[-1]
+        print(f"Драйвер запущен на порту: {driver_port}")
+
+        with open("debug_port.txt", "w") as file:
+            file.write(str(driver_port))
+
     return driver
 
 
+def replace_vars(sheet, id, str):
+    
+    for i in range(0, len(sheet[1])):
 
-def fetch(id, mode, loop_string):
+        f = str.find(f"${sheet[1][i].value}")
+        if f != -1:
+            id_i = int(id) + 1
+            var = sheet[id_i][i].value
+            str = str.replace(f"${sheet[1][i].value}", var)
+
+    return(str)
+
+
+def loop(loop_string, driver, sheet, id):
     global cur_dir
-    wb = load_workbook(cur_dir+'/profiles.xlsx')
-    first_sheet = wb.sheetnames[0]
-    sheet = wb[first_sheet]  
-    
-    def pr(text):
-        print(f'{id}: {text}')
-    
 
-    def replace_vars(sheet, id, str):
+    loop_string = replace_vars(sheet, id, loop_string)
         
-        for i in range(0, len(sheet[1])):
-
-            f = str.find(f"${sheet[1][i].value}")
-            if f != -1:
-                id_i = int(id) + 1
-                var = sheet[id_i][i].value
-                str = str.replace(f"${sheet[1][i].value}", var)
-
-        return(str)
+    l_s = loop_string.split(';;')
     
+    for s in l_s:
+        s = s.strip()
+        
+        s = s.split('::')
+        
+        minus = s[0].find('-')
+        if minus != -1:
+            continue
+        
+        if s[0] == 'sleep':
+            pr(id,f"Сплю {s[1]} сек.")
+            time.sleep(int(s[1]))
+        
+        if s[0] == 'url':
+            try:
+                driver.get(s[1])
+                pr(id,f"Переход на страницу: {s[1]}")
+            except:
+                pr(id,f'Не удалось перейти на страницу: {s[1]}')
+        
+        if s[0] == 'click':
+            if s[1] == 'xp':
+                try:
+                    wait = WebDriverWait(driver, 10)
+                    element = wait.until(EC.visibility_of_element_located((By.XPATH, s[2])))
+                    element.click()
+                    pr(id,f"Выполнен клик на элемент: {s[2]}")
+                except:
+                    pr(id,f"Не выполнен клик на элемент: {s[2]}")
+
+        if s[0] == 'text':
+            if s[1] == 'xp':
+                try:
+                    wait = WebDriverWait(driver, 10)
+                    element = wait.until(EC.visibility_of_element_located((By.XPATH, s[2])))
+                    element.send_keys(s[3])
+                    pr(id,f"Вставлено значение '{s[3]}' в поле: {s[2]}")
+                except:
+                    pr(id,f"Не удалось вставить значение '{s[3]}' в поле: {s[2]}")
     
-            
+
+
+
+def fetch(id, mode, loop_string, sheet):
+
     
     if mode == 'auto':
 
         driver = start_driver('auto', id, sheet)
 
-        ##########################################################
-
-        loop_string = replace_vars(sheet, id, loop_string)
         
-        l_s = loop_string.split(';;')
-        
-        for s in l_s:
-            s = s.strip()
-            
-            s = s.split('::')
-            
-            minus = s[0].find('-')
-            if minus != -1:
-                continue
-            
-            if s[0] == 'sleep':
-                pr(f"Сплю {s[1]} сек.")
-                time.sleep(int(s[1]))
-            
-            if s[0] == 'url':
-                try:
-                    driver.get(s[1])
-                    pr(f"Переход на страницу: {s[1]}")
-                except:
-                    pr(f'Не удалось перейти на страницу: {s[1]}')
-            
-            if s[0] == 'click':
-                if s[1] == 'xp':
-                    try:
-                        wait = WebDriverWait(driver, 10)
-                        element = wait.until(EC.visibility_of_element_located((By.XPATH, s[2])))
-                        element.click()
-                        pr(f"Выполнен клик на элемент: {s[2]}")
-                    except:
-                        pr(f"Не выполнен клик на элемент: {s[2]}")
-
-            if s[0] == 'text':
-                if s[1] == 'xp':
-                    try:
-                        wait = WebDriverWait(driver, 10)
-                        element = wait.until(EC.visibility_of_element_located((By.XPATH, s[2])))
-                        element.send_keys(s[3])
-                        pr(f"Вставлено значение '{s[3]}' в поле: {s[2]}")
-                    except:
-                        pr(f"Не удалось вставить значение '{s[3]}' в поле: {s[2]}")
+        loop(loop_string, driver, sheet, id)
         
         
         time.sleep(10)
-        pr(f"закрыт профиль")
+        pr(id,f"профиль закрыт")
         driver.quit()
+
     else:
-        print('not_auto')
+
+        driver = start_driver('auto', id, sheet)
+        
+        time.sleep(99999999)
+        driver.quit()
 
 
+def debug(sheet, id, mode):
 
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(('127.0.0.1', 12345))
+
+    session_url = client_socket.recv(1024).decode()
+
+    chrome_options = webdriver.ChromeOptions()
+
+    with open("debug_port.txt", "r") as file:
+        read_port = str(file.read())
+
+
+    chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:"+read_port)
+
+    driver = webdriver.Chrome(options=chrome_options)
+
+    with open(cur_dir+'/Actions/debug.txt', 'r') as file:
+        action = file.read()
+    
+    loop(action, driver, sheet, id)
+
+    client_socket.send('quit'.encode())
+    client_socket.close()
+    
 
 
 def worker(semaphore, task_args):
@@ -208,56 +246,66 @@ def main():
     
     mode = int(input('Выберите режим: 1 - отрыть профиля, 2 - выполнить скрипт на профилях:'))
     
-    if mode == 1:
-        print('ok1')
-    elif mode == 2:
+    if mode == 1 or mode == 2:
         
-        mode = 'auto'
+        if mode == 2:
+            mode = 'auto'
+        else:
+            mode = 'open'
 
         pr_r = input('Какие профиля открыть? (1,2,3,5-10...):')
         pr_r = profiles_range(pr_r, len(sheet['A'])-1)
         if pr_r:
             
-            pr_scr = input('Введите название скрипта (Пример: test.txt):')
-            if os.path.exists(cur_dir+'/Actions/'+pr_scr):
-                
-                with open(cur_dir+'/Actions/'+pr_scr, 'r') as file:
-                    action = file.read()
-                
-                r_th = int(input('Сколько потоков запустить? (число):'))
-                if r_th:
-                    
-                    num_threads = r_th
-                    
-                    task_args_list = []
-                    for pr in pr_r:
-                        task_args_list.append((str(pr), mode, action))
-
-                    semaphore = threading.Semaphore(num_threads)
-
-                    threads = []
-                    for task_args in task_args_list:
-                        thread = threading.Thread(target=worker, args=(semaphore, task_args))
-                        thread.start()
-                        threads.append(thread)
-
-                    for thread in threads:
-                        thread.join()
-                
+            if mode == 'auto':
+                pr_scr = input('Введите название скрипта (Пример: test.txt):')
+                if not os.path.exists(cur_dir+'/Actions/'+pr_scr):
+                    print('Нет такого скрипта')
+                    exit()
                 else:
-                    print('Неверное значение')
-                
+                    with open(cur_dir+'/Actions/'+pr_scr, 'r') as file:
+                        action = file.read()
             else:
-                print('Файл не найден')
+                action = ''
+
+            if mode == 'auto':
+                r_th = int(input('Сколько потоков запустить? (число):'))
+            else:
+                r_th = len(pr_r)
+
+            
+            if r_th:
+                
+                num_threads = r_th
+                
+                task_args_list = []
+                for pr in pr_r:
+                    task_args_list.append((str(pr), mode, action, sheet))
+
+                semaphore = threading.Semaphore(num_threads)
+
+                threads = []
+                for task_args in task_args_list:
+                    thread = threading.Thread(target=worker, args=(semaphore, task_args))
+                    thread.start()
+                    threads.append(thread)
+
+                for thread in threads:
+                    thread.join()
+            
+            else:
+                print('Неверное значение')
+                
             
         else:
             print('Неверное значение или введены несуществующие профиля')
 
     elif mode == 3:
 
-        mode = 'debug'
+        deb_data = input("С какого профиля взять данные?:")
 
-        #subprocess.call(['python', cur_dir+"/debug_driver.py"])
+        debug(sheet, deb_data, 'debug')
+
 
         
     else:
